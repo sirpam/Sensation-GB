@@ -48,7 +48,6 @@ config ARCH_MSM8X60
 	select MSM_XO
 	select MSM_GPIOMUX
 	select MSM_BUS_SCALING
-	select MSM_SECURE_IO
 
 config ARCH_MSM8X60_LTE
 	bool "MSM8X60_LTE"
@@ -120,19 +119,19 @@ config TURBO_MODE
 
 config PERFLOCK
 	depends on CPU_FREQ
-	depends on ARCH_MSM8X60 || ARCH_QSD8X50 || ARCH_MSM7X30 || ARCH_MSM7X00A || ARCH_MSM7227 || ARCH_MSM7225
+	depends on ARCH_QSD8X50 || ARCH_MSM7X30 || ARCH_MSM7X00A || ARCH_MSM7227 || ARCH_MSM7225
 	default n
 	bool "HTC Performance Lock"
 
 config PERFLOCK_BOOT_LOCK
 	depends on PERFLOCK
-	depends on ARCH_MSM8X60 || ARCH_QSD8X50 || ARCH_MSM7X30 || ARCH_MSM7X00A || ARCH_MSM7227 || ARCH_MSM7225
+	depends on ARCH_QSD8X50 || ARCH_MSM7X30 || ARCH_MSM7X00A || ARCH_MSM7227 || ARCH_MSM7225
 	default n
 	bool "Boot Time Performance Lock"
 
 config PERFLOCK_SCREEN_POLICY
 	depends on PERFLOCK
-	depends on ARCH_MSM8X60 || ARCH_QSD8X50 || ARCH_MSM7X00A || ARCH_MSM7227 || ARCH_MSM7225
+	depends on ARCH_QSD8X50 || ARCH_MSM7X00A || ARCH_MSM7227 || ARCH_MSM7225
 	default n
 	bool "Change Cpufreq Policy while Screen ON/OFF"
 
@@ -217,8 +216,6 @@ config MSM_DEBUG_UART
 	default 1 if MSM_DEBUG_UART1
 	default 2 if MSM_DEBUG_UART2
 	default 3 if MSM_DEBUG_UART3
-	default 11 if MSM_DEBUG_UART11
-	default 12 if MSM_DEBUG_UART12
 
 choice
 	prompt "Debug UART"
@@ -236,12 +233,6 @@ choice
 
 	config MSM_DEBUG_UART3
 		bool "UART3"
-
-	config MSM_DEBUG_UART11
-		bool "UART11"
-
-	config MSM_DEBUG_UART12
-		bool "UART12"
 endchoice
 
 config FORCE_WARNING_AS_ERROR
@@ -488,7 +479,7 @@ config MACH_MECHA
        help
          Support for the Qualcomm MSM7x30 Mecha board.
 
-config ARCH_MSM7X30_LTE
+config QCT_LTE
        bool "Support QCT LTE function"
        default n
        help
@@ -501,6 +492,16 @@ config MACH_GLACIER
        bool "MSM7x30 GLACIER"
        help
          Support for the Qualcomm MSM7x30 Glacier board.
+
+config OVERLAY_FORCE_UPDATE
+       depends on MACH_GLACIER || MACH_SPEEDY
+       depends on MSM_MDP40
+       default y
+       bool "Force overlay to update screen"
+       help
+         Update the screen when the overlay is updated.
+         Do not use this if your framework updates the
+         screen when the overlay is updated.
 
 config MACH_SAGA
        depends on ARCH_MSM7X30
@@ -561,14 +562,6 @@ config MACH_EXPRESS_KT
        help
          Support for the Qualcomm MSM7x30 Express_kt board.
 
-config MACH_EXPRESS_H
-       depends on ARCH_MSM7X30
-       depends on !MSM_STACKED_MEMORY
-       default n
-       bool "MSM7x30 EXPRESS_H"
-       select MSM7X30_DDR2
-       help
-         Support for the Qualcomm MSM7x30 Express_h board.
 
 config MACH_VIVO
        depends on ARCH_MSM7X30
@@ -593,22 +586,6 @@ config MACH_VIVOW_CT
        bool "MSM7x30 VIVOW_CT"
        help
          Support for the Qualcomm MSM7x30 Vivo_w_ct board.
-
-config MACH_TAG
-       depends on ARCH_MSM7X30
-       depends on !MSM_STACKED_MEMORY
-       default n
-       bool "MSM7x30 TAG"
-       help
-         Support for the Qualcomm MSM7x30 Tag board.
-
-config MACH_TAGH
-       depends on ARCH_MSM7X30
-       depends on !MSM_STACKED_MEMORY
-       default n
-       bool "MSM7x30 TAGH"
-       help
-         Support for the Qualcomm MSM7x30 Tag_h board.
 
 config MACH_PYRAMID
 		depends on ARCH_MSM8X60
@@ -681,22 +658,6 @@ config MACH_HOLIDAY
 	select SMP_PARALLEL_START
 	help
 	  Support for the Holiday device.
-
-config MACH_VIGOR
-	depends on ARCH_MSM8X60
-	default n
-	bool "Vigor"
-	select SMP_PARALLEL_START
-	help
-	  Support for the Vigor device.
-
-config MACH_RUBY
-	depends on ARCH_MSM8X60
-	default n
-	bool "Ruby"
-	select SMP_PARALLEL_START
-	help
-	  Support for the Ruby device.
 
 config MSM_STACKED_MEMORY
 	bool "Stacked Memory"
@@ -1055,7 +1016,7 @@ config MSM_ONCRPCROUTER_DEBUG
 	  Support for debugging the ONCRPC router for communication
 	  between the ARM9 and ARM11
 
-if ARCH_MSM7X30_LTE || ARCH_MSM8X60
+if QCT_LTE || ARCH_MSM8X60
 choice
 	prompt "MSM Shared memory interface version"
 	depends on MSM_SMD
@@ -1094,7 +1055,7 @@ config MSM_SMD_DEBUG
 	  between the ARM9 and ARM11
 
 config MSM_SDIO_AL
-	depends on ((ARCH_MSM7X30 || ARCH_MSM8X60_LTE) && HAS_WAKELOCK)
+	depends on ((ARCH_MSM7X30 || ARCH_MSM8X60) && HAS_WAKELOCK)
 	default n
 	tristate "SDIO-Abstraction-Layer"
 	help
@@ -1208,20 +1169,6 @@ config MSM_SDIO_DIAG
 	default y
 	help
 	  Provides a DIAG port interface over SDIO.
-
-config MSM_NONSMD_PACKET_FILTER
-	bool "Non-SMD based Packet Filter"
-	default n
-	help
-	  The white TCP port list is updated in attribute
-	  relying on RIL to notify modem.
-
-config MSM_SMD0_WQ
-	bool "SMD0 TTY Workqueue"
-	depends on (ARCH_MSM8X60)
-	default y
-	help
-	  Independent tty workqueue for SMD0
 
 config MSM_RPC_LOOPBACK_XPRT
 	depends on MSM_ONCRPCROUTER
@@ -1378,6 +1325,8 @@ config MSM_CPU_FREQ_SCREEN_ON
 
 endif # MSM_CPU_FREQ_SCREEN
 
+if PERFLOCK
+
 config MSM_CPU_FREQ_ONDEMAND_MAX
 	int "Max"
 	default 384000
@@ -1385,6 +1334,8 @@ config MSM_CPU_FREQ_ONDEMAND_MAX
 config MSM_CPU_FREQ_ONDEMAND_MIN
 	int "Min"
 	default 245760
+
+endif # PERFLOCK
 
 config MSM_HW3D
 	tristate "MSM Hardware 3D Register Driver"
@@ -1542,6 +1493,13 @@ config ARCH_MSM_FLASHLIGHT
         help
           The flashlight driver is for MSM series.
 
+config ARCH_MSM_FLASHLIGHT_DEATH_RAY
+	bool "Enable high-brightness (death ray) mode"
+	depends on ARCH_MSM_FLASHLIGHT
+	default n
+	help
+	  Enables a high-brightness mode for the flash LED. Dangerous
+
 config VIRTUAL_KPANIC_SRC
 	depends on VIRTUAL_KPANIC_PARTITION
 	string "Partition to steal from"
@@ -1596,19 +1554,12 @@ config HTC_HEADSET_PMIC
 	help
 	  Provides support of HTC PMIC headset detection.
 
-config HTC_HEADSET_MISC
-	tristate "HTC MISC headset detection driver"
+config HTC_HEADSET_PMIC_ADC
+	tristate "HTC PMIC microphone ADC driver"
 	depends on HTC_HEADSET_MGR
 	default n
 	help
-	  Provides support of HTC MISC headset detection.
-
-config HTC_HEADSET_8X60
-	tristate "HTC 8X60 headset detection driver"
-	depends on HTC_HEADSET_MGR
-	default n
-	help
-	  Provides support of HTC 8X60 headset detection.
+	  Provides support of HTC PMIC microphone ADC.
 
 config HTC_ONMODE_CHARGING
 	bool "On Mode Charging Icon Support"
@@ -1731,13 +1682,6 @@ config MSM_SSBI
 	  Enable support for SSBI bus. This is required for communicatinig with
 	  Qualcomm PMICs and Audio codecs.
 
-config MSM8X60_SSBI
-	tristate "SSBI support"
-	depends on ARCH_MSM8X60
-	help
-	  Enable support for SSBI bus. This is required for communicating with
-	  Qualcomm PMICs and Audio codecs.
-
 config RPC_SIZE_1024
     default n
     bool "set RPC size to 1024"
@@ -1749,18 +1693,22 @@ config ACPUCLOCK_DEBUG
 	help
 		Acpuclock freq/vdd adjustment in debugfs.
 
-config ACPUCLK_SET_RATE_DEBUG
-	bool "Enable debug timer for acpuclk_set_rate"
-	default n
-	help
-		Enable acpuclk_set_rate debug.
-		Will dump process stack which called acpuclk_set_rate
-
 config ACPUCLOCK_LIMIT_768MHZ
 	bool "Limit the CPU frequency at 768MHz"
 	default n
 	help
 		Support to limit the CPU frequency at 768MHz.
+
+config ACPUCLOCK_OVERCLOCKING
+	bool "Enable support for CPU overclocking"
+	default n
+	depends on CPU_FREQ && !PERFLOCK
+	depends on ARCH_MSM7X30
+
+config JESUS_PHONE
+        bool "Enable support for unstable CPU frequencies"
+        default n
+        depends on ACPUCLOCK_OVERCLOCKING
 
 config HTC_SMEM_MSMC1C2_DEBUG
 	bool "MSMC1/MSMC2 shared memory debug"
@@ -1801,17 +1749,6 @@ config MSM_RPM_LOG
 	  information about RPM operation. The driver outputs the messages
 	  via a debugfs node.
 
-config MSM_RPM_STATS_LOG
-	tristate "MSM Resource Power Manager Stat Driver"
-	depends on DEBUG_FS
-	depends on ARCH_MSM8X60
-	default n
-	  help
-	  This option enables a driver which reads RPM messages from a shared
-	  memory location. These messages provide statistical information about
-	  the low power modes that RPM enters. The drivers outputs the message
-	  via a debugfs node.
-	  
 config SMMU
 	bool "System MMU support"
 	depends on MMU
@@ -1902,14 +1839,3 @@ config MSM7X30_DDR2
 	bool "Request max ebi1 at max cpu frequency"
 	depends on ARCH_MSM7X30
 	default n
-
-config SUPPORT_DQ_BATTERY
-	bool "Support DQ battery."
-	default n
-	help
-		support DQ battery.
-
-config RADIO_FEEDBACK8660
-	bool
-	depends on ARCH_MSM8X60
-	default y
